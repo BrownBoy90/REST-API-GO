@@ -1,0 +1,49 @@
+Executives:
+- GET /execs: Get list of executives
+- 'POST /execs': Add a new executive
+- "PATCH /execs': Modify multiple executives
+- 'GET /execs/{id}": Get a specific executive
+- "PATCH /execs/{id}': Modify a specific executive
+- 'DELETE /execs/{id}": Delete a specific executive
+- "POST /execs/login': Login
+- POST /execs/logout: Logout
+- "POST /execs/forgotpassword': Forgot password
+- "POST /execs/resetpassword/reset/{resetcode}': Reset password
+
+ Students:
+• - "GET /students': Get list of students
+• - 'POST /students': Add a new student
+• - 'PATCH /students': Modify multiple students
+• - 'DELETE /students: Delete multiple students
+- "GET /students/{id}': Get a specific student
+- "PUT /students/{id}: Update a specific student
+- PATCH /students/{id}': Modify a specific student
+- 'DELETE /students/{id}: Delete a specific student
+
+Teachers:
+• - "GET /teachers': Get list of teachers
+• - 'POST /teachers: Add a new teacher
+• - "PATCH /teachers': Modify multiple teachers
+• -'DELETE /teachers': Delete multiple teachers
+• - 'GET /teachers/{id}: Get a specific teacher
+- "PUT /teachers/{id}: Update a specific teacher
+• - 'PATCH /teachers/{id}': Modify a specific teacher
+• - 'DELETE /teachers/fid}': Delete a specific teacher
+• - 'GET /teachers/{id}/students': Get students of a specific teacher
+- "GET /teachers/fid}/studentcount: Get student count for a specific teacher
+
+// BEST practices
+MOdularity - Keep your API endpoints modular and independent
+Each endpoint should have single responsibility
+Document each endpoint with clear instructions on how to use it.
+Expected inputs and possible outputs.
+Implement a comprehensive error handling to provide meaningful error messages and HTTP status codes and always validate and sanitize inputs to prevent security vulnerabilities such as SQL injection and cross site scripting attacks.
+Finally, write unit and integration tests to ensure the API works as expected and handles edge cases gracefully
+
+// Common Pitfall
+Overcomplicating the API
+Avoid adding unnecessary complexity which can make API hard to maintain.
+Always prioritize security from the beginning.
+It is much harder to add security features after the API is built.
+Test Thoroughly
+Document properly
