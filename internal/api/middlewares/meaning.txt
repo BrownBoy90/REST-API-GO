@@ -1,0 +1,17 @@
+Middleware is a function that wraps around another function, the actual request handler and this wraper function can do something before and or after calling the actual handler.
+
+Now middleware functions receive the request, process it, and then pass it along to the next function in the chain. The next function is typically an actual handler or another middleware.
+
+Concept of next function in the middleware. The next function refers to the function that the current middleware should call once it is done processing the request.
+
+This could be another middleware ot the final handler function in go.
+
+In go, the concept of next is not directly provided by default, instead go uses http.Handler interface to create middleware that can chain handlers together.
+
+The next function is essentially the next handler in the chain that you explicitly call within your middleware
+
+Middleware in go provides a flexible way to handle cross-cutting concerns such as logging, authentication and error handling.
+
+By chaining handlers togethor, you can create a pipeline that processes each request in a modular and maintainable way.
+
+By understanding and utilizing middlewares, you can ensure that your API handles requests and responses efficiently maintaining a clean separation of concerns
