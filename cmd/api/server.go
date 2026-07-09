@@ -2,16 +2,121 @@ package main
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	mw "restapi/internal/api/middlewares"
+	"strconv"
+	"strings"
+	"sync"
 )
 
-type user struct {
-	Name string `json:"name"`
-	Age  string `json:"age"`
-	City string `json:"city"`
+type Teacher struct {
+	ID        int
+	FirstName string
+	LastName  string
+	Class     string
+	Subject   string
+}
+
+var (
+	teachers = make(map[int]Teacher)
+	mutex    = &sync.Mutex{}
+	nextID   = 1
+)
+
+// Initialize some dummy data
+func init() {
+	teachers[nextID] = Teacher{
+		ID:        nextID,
+		FirstName: "John",
+		LastName:  "Doe",
+		Class:     "9A",
+		Subject:   "Math",
+	}
+	nextID++
+	teachers[nextID] = Teacher{
+		ID:        nextID,
+		FirstName: "Jane",
+		LastName:  "Smith",
+		Class:     "10A",
+		Subject:   "Algebra",
+	}
+	nextID++
+	teachers[nextID] = Teacher{
+		ID:        nextID,
+		FirstName: "Jane",
+		LastName:  "Doe",
+		Class:     "11A",
+		Subject:   "Biology",
+	}
+
+}
+
+func getTeachershandler(w http.ResponseWriter, r *http.Request) {
+
+	// fmt.Println(r.URL.Path)
+	path := strings.TrimPrefix(r.URL.Path, "/teachers/")
+	idStr := strings.TrimSuffix(path, "/")
+	fmt.Println(idStr)
+
+	if idStr == "" {
+		firstName := r.URL.Query().Get("first_name")
+		lastName := r.URL.Query().Get("last_name")
+
+		teacherList := make([]Teacher, 0, len(teachers))
+		for _, teacher := range teachers {
+			if (firstName == "" || teacher.FirstName == firstName) && (lastName == "" || teacher.LastName == lastName) {
+				teacherList = append(teacherList, teacher)
+			}
+		}
+		response := struct {
+			Status string    `json:"status"`
+			Count  int       `json:"count"`
+			Data   []Teacher `json:"data"`
+		}{
+			Status: "success",
+			Count:  len(teacherList),
+			Data:   teacherList,
+		}
+
+		w.Header().Set("Conten-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+	}
+
+	// Handle Path Parameter
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	teacher, exists := teachers[id]
+	if !exists {
+		http.Error(w, "Teacher not found", http.StatusNotFound)
+		return
+	}
+	json.NewEncoder(w).Encode(teacher)
+}
+
+func addTeacherHandler(w http.ResponseWriter, r *http.Request) {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	var newTeachers []Teacher
+	err := json.NewDecoder(r.Body).Decode(&newTeachers)
+	if err!=nil {
+		http.Error(w, "Invalid Request Body", http.StatusBadRequest)
+	}
+
+	addedTeachers := make([]Teacher, len(newTeachers))
+	for i, newTeacher := range newTeachers {
+		newTeacher.ID = nextID
+		teachers[nextID] = newTeacher
+		addedTeachers[i] = newTeacher
+		nextID++
+	}
+	w.Header().Set("Content-Type", "application/json")
 }
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
@@ -24,20 +129,15 @@ func teachersHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
-		w.Write([]byte("Hello GET method on Teachers Route"))
-		// fmt.Println("Hello GET method on Teachers Route")
+		getTeachershandler(w, r)
 	case http.MethodPost:
-		w.Write([]byte("Hello POST method on Teachers Route"))
-		fmt.Println("Hello POST method on Teachers Route")
+		// Post request handler
 	case http.MethodPut:
 		w.Write([]byte("Hello PUT method on Teachers Route"))
-		fmt.Println("Hello PUT method on Teachers Route")
 	case http.MethodPatch:
 		w.Write([]byte("Hello PATCH method on Teachers Route"))
-		fmt.Println("Hello PATCH method on Teachers Route")
 	case http.MethodDelete:
 		w.Write([]byte("Hello DELETE method on Teachers Route"))
-		fmt.Println("Hello DELETE method on Teachers Route")
 
 	}
 }
@@ -45,23 +145,15 @@ func teachersHandler(w http.ResponseWriter, r *http.Request) {
 func studentsHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-
-		w.Write([]byte("Hello GET method on Students Route"))
-		fmt.Println("Hello GET method on Students Route")
-
+		// Call GET method handler function
 	case http.MethodPost:
-
 		w.Write([]byte("Hello POST method on Students Route"))
-		fmt.Println("Hello POST method on Students Route")
 	case http.MethodPut:
 		w.Write([]byte("Hello PUT method on Students Route"))
-		fmt.Println("Hello PUT method on Students Route")
 	case http.MethodPatch:
 		w.Write([]byte("Hello PATCH method on Students Route"))
-		fmt.Println("Hello PATCH method on Students Route")
 	case http.MethodDelete:
 		w.Write([]byte("Hello DELETE method on Students Route"))
-		fmt.Println("Hello DELETE method on Students Route")
 
 	}
 }
@@ -69,23 +161,15 @@ func studentsHandler(w http.ResponseWriter, r *http.Request) {
 func execsHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-
 		w.Write([]byte("Hello GET method on Execs Route"))
-		fmt.Println("Hello GET method on Execs Route")
-
 	case http.MethodPost:
-
 		w.Write([]byte("Hello POST method on Execs Route"))
-		fmt.Println("Hello POST method on Execs Route")
 	case http.MethodPut:
 		w.Write([]byte("Hello PUT method on Execs Route"))
-		fmt.Println("Hello PUT method on Execs Route")
 	case http.MethodPatch:
 		w.Write([]byte("Hello PATCH  method on Execs Route"))
-		fmt.Println("Hello PATCH method on Execs Route")
 	case http.MethodDelete:
 		w.Write([]byte("Hello DELETE method on Execs Route"))
-		fmt.Println("Hello DELETE method on Execs Route")
 
 	}
 }
@@ -128,10 +212,23 @@ func main() {
 		MinVersion: tls.VersionTLS12,
 	}
 
+	// rl := mw.NewRateLimiter(5, time.Minute)
+
+	// hppOptions := mw.HPPOptions{
+	// 	CheckQuery:                  true,
+	// 	CheckBody:                   true,
+	// 	CheckBodyOnlyForContentType: "application/x-www-form-urlencoded",
+	// 	Whitelist:                   []string{"sortBy", "sortOrder", "name", "age", "class"},
+	// }
+
+	// secureMux := mw.Cors(rl.Middleware(mw.ResponseTimeMiddleware(mw.SecurityHeaders(mw.Compression(mw.Hpp(hppOptions)((mux)))))))
+	// secureMux := applyMiddleware(mux, mw.Hpp(hppOptions), mw.Compression, mw.SecurityHeaders, mw.ResponseTimeMiddleware, rl.Middleware, mw.Cors)
+	secureMux := mw.SecurityHeaders(mux)
+
 	// Create custom server
 	server := &http.Server{
-		Addr: port,
-		Handler: mw.Compression(mw.ResponseTimeMiddleware(mw.SecurityHeaders(mw.Cors(mux)))),
+		Addr:      port,
+		Handler:   secureMux,
 		TLSConfig: tlsConfig,
 	}
 
@@ -144,3 +241,15 @@ func main() {
 }
 
 // If server is rendering web pages, images, graphics, then in that case using a compression middleware will proove to be very efficient. But if it is a simple static website with small images, it is not a heav y load then it may not be a useful choice
+
+// Middleware is a function that wraps an http.handler with additional functionality
+type Middleware func(http.Handler) http.Handler
+
+// Appply Middlewares
+func ApplyMiddleware(handler http.Handler, middlewares ...Middleware) http.Handler {
+	for _, middleware := range middlewares {
+		handler = middleware(handler)
+
+	}
+	return handler
+}
